@@ -1,5 +1,4 @@
 import iLikePizza.web
-import iLikePizza.debugger 
 
 class helloWorld(iLikePizza.web.Request):
 	
@@ -7,13 +6,15 @@ class helloWorld(iLikePizza.web.Request):
 		print "init helloWorld"
 		
 	def get(self):
-		return "index"
+		self.write("GET METHOD\nCOOKIE VALUE=%s" % (self.get_cookie("index", "not set"),) )
 	
 	def post(self):
-		return "post"
+		self.render("test.html", test=1, test2=2)
 		
-	def custom(self):
-		return "hi there"
+	def custom(self, parm=None):
+		self.set_cookie("index", "value")
+		
+		self.write("set cookie")
 
 application = iLikePizza.web.Application([
 	(r'^$', helloWorld),

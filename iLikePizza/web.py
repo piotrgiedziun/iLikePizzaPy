@@ -3,6 +3,7 @@ from cgi import escape
 import inspect
 from exception import *
 from types import UnboundMethodType
+from cookies import CookiesManager, SessionManager
 
 class Application(object):
 	'''
@@ -69,39 +70,34 @@ class Application(object):
 			if match is not None:
 
 				if type(callback) == UnboundMethodType: 
-					callbackObject = callback.im_class()
+					callbackObject = callback.im_class(environ)
 				else:
-					callbackObject = callback()
+					callbackObject = callback(environ)
 					
 				callbackObject.vars = match.groups()
 				
 				try:
 					if type(callback) == UnboundMethodType:
-						callbackObject.add_response(
-							callback(
-								callbackObject,
-								*self.callback_parms(callback, callbackObject.vars)
-							)
+						callback(
+							callbackObject,
+							*self.callback_parms(callback, callbackObject.vars)
 						)
 					elif environ['REQUEST_METHOD'] == "GET":
-						callbackObject.add_response(
-							callbackObject.get(
-								*self.callback_parms(callbackObject.get, callbackObject.vars)
-							)
+						callbackObject.get(
+							*self.callback_parms(callbackObject.get, callbackObject.vars)
 						)
 					elif environ['REQUEST_METHOD'] == "POST":
-						callbackObject.add_response(
-							callbackObject.post(
-								*self.callback_parms(callbackObject.post, callbackObject.vars)
-							)
+						callbackObject.post(
+							*self.callback_parms(callbackObject.post, callbackObject.vars)
 						)
-					return callbackObject.return_response(environ, start_response)
+						
+					return callbackObject._return_response(start_response)
 					
 				except iLikePizzaException, (e):
 					return self.error(environ, start_response, e.error)
-				except Exception, (e):
-					print e
-					return self.error(environ, start_response, "Unkown Internal Error. More info in server console.")
+				#except Exception, (e):
+				#	print "Error: %s" % (e,)
+				#	return self.error(environ, start_response, "Unkown Internal Error. More info in server console.")
 				
 		return self.error_404(environ, start_response)
 		
@@ -139,22 +135,27 @@ class Application(object):
 		return ['Not Found']
 		
 	def error(self, environ, start_response, message):
-		start_response('500 Internal Server Error', [('Content-Type', 'text/plain')])
+		start_response('500 INTERNAL SEVER ERROR', [('Content-Type', 'text/plain')])
 		return [message]
 		
 class Request(object):
 	
-	def __init__(self):
-		self.responseHTML = []
+	def __init__(self, environ):
+		self._responseHTML = []
+		self._cookiesManager = CookiesManager(environ.get("HTTP_COOKIE",""))
+		self._sessionManager = SessionManager(environ.get("HTTP_COOKIE",""))
 		self.initialize()
-	
-	def add_response(self, response):
-		self.responseHTML.append(response)
 
-	def return_response(self, environ, start_response):
-		print "response", self.responseHTML
-		start_response('200 OK', [('Content-Type', 'text/html')])
-		return self.responseHTML[:]
+	def _return_response(self, start_response):
+		headers = [
+			('Content-Type', 'text/html'),
+		]
+		print self._cookiesManager.get_headers()
+		headers += self._cookiesManager.get_headers()
+		
+		start_response('200 OK', headers)
+
+		return self._responseHTML[:]
 				
 	def initialize(self):
 		pass
@@ -164,3 +165,17 @@ class Request(object):
 		
 	def get(self):
 		pass
+		
+	def set_cookie(self, index, value):
+		self._cookiesManager.set(index, value)
+		
+	def get_cookie(self, index, default=None):
+		return self._cookiesManager.get(index, default)
+		
+	def write(self, content):
+		self._responseHTML.append(content)
+		
+	def render(self, file, **parms):
+		print file
+		for index in parms:
+			print index, parms[index]
