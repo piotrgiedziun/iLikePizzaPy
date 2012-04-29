@@ -1,9 +1,10 @@
 import re
-from cgi import escape
 import inspect
+from cgi import escape
 from exception import *
 from types import UnboundMethodType
 from cookies import CookiesManager, SessionManager
+from database import DatabaseManager
 
 class Application(object):
 	'''
@@ -137,20 +138,20 @@ class Application(object):
 	def error(self, environ, start_response, message):
 		start_response('500 INTERNAL SEVER ERROR', [('Content-Type', 'text/plain')])
 		return [message]
-		
+
 class Request(object):
 	
 	def __init__(self, environ):
 		self._responseHTML = []
 		self._cookiesManager = CookiesManager(environ.get("HTTP_COOKIE",""))
-		self._sessionManager = SessionManager(environ.get("HTTP_COOKIE",""))
+		self._sessionManager = SessionManager(self._cookiesManager)
 		self.initialize()
 
 	def _return_response(self, start_response):
 		headers = [
 			('Content-Type', 'text/html'),
 		]
-		print self._cookiesManager.get_headers()
+
 		headers += self._cookiesManager.get_headers()
 		
 		start_response('200 OK', headers)
@@ -166,16 +167,34 @@ class Request(object):
 	def get(self):
 		pass
 		
+	def set_session(self, index, value):
+		self._sessionManager.set(index, value)
+		
+	def get_session(self, index, default):
+		return self._sessionManager.get(index, default)
+		
+	def isset_session(self, index):
+		pass
+	
+	def remove_session(self):
+		self._sessionManager.remove()
+		
 	def set_cookie(self, index, value):
 		self._cookiesManager.set(index, value)
 		
 	def get_cookie(self, index, default=None):
 		return self._cookiesManager.get(index, default)
 		
+	def isset_cookie(self, index):
+		pass
+		
+	def remove_cookie(self, index):
+		self._cookiesManager.remove(index)
+		
 	def write(self, content):
 		self._responseHTML.append(content)
 		
 	def render(self, file, **parms):
 		print file
-		for index in parms:
-			print index, parms[index]
+		for index in range(0, len(parms)-1):
+			print parms[index]

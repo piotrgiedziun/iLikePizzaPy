@@ -2,23 +2,43 @@ import iLikePizza.web
 
 class helloWorld(iLikePizza.web.Request):
 	
-	def initialize(self):
-		print "init helloWorld"
+	#def initialize(self):
+	#	# db connection here
+	#	print "init helloWorld"
 		
 	def get(self):
-		self.write("GET METHOD\nCOOKIE VALUE=%s" % (self.get_cookie("index", "not set"),) )
-	
+		# show cookie and session values
+		cookie = self.get_cookie("index", "none")
+		session = self.get_session("test", "none")
+
+		self.write("GET METHOD\nCOOKIE VALUE=%s\nSESSION VALUE=%s" % (cookie,session) )
+		
 	def post(self):
+		# render template
 		self.render("test.html", test=1, test2=2)
 		
-	def custom(self, parm=None):
-		self.set_cookie("index", "value")
+	def remove(self):
+		# remove data
+		self.remove_cookie("index")
+		self.remove_session()
+		# write output
+		self.write("remove action done!")
 		
-		self.write("set cookie")
+	def set(self):
+		# set data
+		self.set_cookie("index", "value")
+		self.set_session("test", "test value")
+		# write output
+		self.write("set action done!")
+		
+	def parm(self, parm=None):
+		self.write("%w" % (parm,) )
 
 application = iLikePizza.web.Application([
 	(r'^$', helloWorld),
-	(r'test/([a-zA-Z_]*)$', helloWorld.custom),
+	(r'^parm/([a-zA-Z_]*)$', helloWorld.parm),
+	(r'remove$', helloWorld.remove),
+	(r'set$', helloWorld.set),
 ])
 
 if __name__ == "__main__":
