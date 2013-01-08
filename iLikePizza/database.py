@@ -1,4 +1,4 @@
-import MySQLdb
+#import MySQLdb
 import iLikePizza.web
 
 class DatabaseManager(object):

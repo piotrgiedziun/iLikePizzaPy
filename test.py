@@ -1,6 +1,9 @@
 import iLikePizza.web
 
-class helloWorld(iLikePizza.web.Request):
+class staticFilesHandler(iLikePizza.web.Static):
+	folder = "public"
+
+class helloWorldHandler(iLikePizza.web.Request):
 	
 	#def initialize(self):
 	#	# db connection here
@@ -35,10 +38,11 @@ class helloWorld(iLikePizza.web.Request):
 		self.write("%w" % (parm,) )
 
 application = iLikePizza.web.Application([
-	(r'^$', helloWorld),
-	(r'^parm/([a-zA-Z_]*)$', helloWorld.parm),
-	(r'remove$', helloWorld.remove),
-	(r'set$', helloWorld.set),
+	(r'^$', helloWorldHandler),
+	(r'^parm/([a-zA-Z_]*)$', helloWorldHandler.parm),
+	(r'remove$', helloWorldHandler.remove),
+	(r'set$', helloWorldHandler.set),
+	(r'public/([a-zA-Z_.]*)$', staticFilesHandler.handle),
 ])
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from exception import *
 from types import UnboundMethodType
 from cookies import CookiesManager, SessionManager
 from database import DatabaseManager
+import mimetypes
+import os.path
 
 class Application(object):
 	'''
@@ -139,6 +141,40 @@ class Application(object):
 		start_response('500 INTERNAL SEVER ERROR', [('Content-Type', 'text/plain')])
 		return [message]
 
+class Static(object):
+
+	folder = "assets/"
+
+	def __init__(self, environ):
+		self.file_to_read = None
+		self.file_to_read_mime = None
+
+	def handle(self, name):
+		file_path = os.path.join(self.folder, name)
+		if not "." in file_path:
+			return
+
+		file_ext = ("."+file_path.split(".")[-1])
+		mimetypes.init()
+
+		if os.path.exists(file_path) and file_ext in mimetypes.types_map:
+			self.file_to_read = file_path
+			self.file_to_read_mime = mimetypes.types_map[file_ext]
+
+
+	def _return_response(self, start_response):
+
+		if self.file_to_read == None:
+			return 
+
+		headers = [
+			('Content-Type', self.file_to_read_mime),
+		]
+
+		start_response('200 OK', headers)
+
+		return open(self.file_to_read).read()
+
 class Request(object):
 	
 	def __init__(self, environ):
@@ -195,6 +231,8 @@ class Request(object):
 		self._responseHTML.append(content)
 		
 	def render(self, file, **parms):
-		print file
+		f = open(file)
 		for index in range(0, len(parms)-1):
 			print parms[index]
+
+		self._responseHTML.append(f.read())
